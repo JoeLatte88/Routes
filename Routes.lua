@@ -1,7 +1,7 @@
 ﻿--[[
 ********************************************************************************
 Routes
-@project-version@
+v1.6.7
 16 October 2014
 (Originally written for Live Servers v4.3.0.15050)
 (Hotfixed for v6.0.2.19034)
@@ -2328,6 +2328,8 @@ do
 	local create_data = {}
 	local empty_table = {}
 	local source_data_choice = {}
+	local create_categories = {}
+	local create_category
 
 	local function deep_copy_table(a, b)
 		for k, v in pairs(b) do
@@ -2465,6 +2467,8 @@ do
 				end
 				local new_route = { route = {71117111, 12357823, 11171123}, selection = {}, db_type = {} }
 
+				new_route.db_type[create_category] = true
+
 				-- Perform a deep copy instead so that db defaults apply
 				local mapID = Routes.LZName[create_zone]
 				local mapIDKey = tostring(mapID)
@@ -2514,6 +2518,23 @@ do
 			end,
 			confirmText = L["A route with that name already exists. Overwrite?"],
 		},
+		category_choice = {
+			name = L["Select Category"], type = "select",
+			desc = L["Category to create route with"],
+			order = 203,
+			values = function()
+				create_categories["Mining"] = "Mining"
+				create_categories["Herbalism"] = "Herb"
+				return create_categories
+			end,
+			get = function()
+				if create_category then return create_category end
+				-- Use currently viewed map on first view.
+				create_category = "Herbalism"
+				return create_category
+			end,
+			set = function(info, key) create_category = key end,
+		},
 		header_normal = {
 			type = "header",
 			name = L["Create Route from Data Sources"],
@@ -2562,7 +2583,7 @@ do
 						local addonkey = db_src:gsub("%s", "_")
 						-- if we want em
 						if (wanted and source_data_choice[addonkey]) then
-							--Routes:Print(("found %s %s %s %s"):format( db_src,db_type,node_type,amount ))
+							Routes:Print(("found %s %s %s %s"):format( db_src,db_type,node_type,amount ))
 							if db_src ~= db.defaults.fake_data then -- ignore any fake data
 								-- extract data from plugin
 								local plugin = Routes.plugins[db_src]
