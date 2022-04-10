@@ -1699,6 +1699,15 @@ function ConfigHandler:RecreateRoute(info)
 	Routes:DrawMinimapLines(true)
 end
 
+function ConfigHandler:UpdateCategories(info)
+		local zone = tonumber(info[2])
+		local route = Routes.routekeys[zone][ info[3] ]
+		local t = db.routes[zone][route]
+		if Update_category then
+			t.db_type[Update_category] = true
+		end
+end
+
 function ConfigHandler:ClusterRoute(info)
 	local zone = tonumber(info[2])
 	local route = Routes.routekeys[zone][ info[3] ]
@@ -2021,7 +2030,11 @@ function ConfigHandler:IsDisableRecreateRoute(info)
 	return disableRecreate or self:IsBeingManualEdited(info)
 end
 
+Update_categories = {}
+Update_category = ""
+
 do
+
 	local routeTable = {
 		type = "group",
 		name = ConfigHandler.GetRouteName,
@@ -2071,6 +2084,36 @@ do
 						confirmText = L["Are you sure you want to recreate this route? This will delete all customized settings for this route."],
 						order = 110,
 						disabled = "IsDisableRecreateRoute",
+					},
+					categorize = {
+						name = L["Categorize"], type = "execute",
+						desc = L["Update the category for this route. NOTE: This will overwrite the existing categories if already assigned."],
+						func = "UpdateCategories",
+						confirm = true,
+						confirmText = L["Are you sure you want to change the category?"],
+						order = 200
+					},
+					category_choice = {
+						name = L["Select Category"], type = "select",
+						desc = L["Category to create route with"],
+						order = 201,
+						values = function()
+							Update_categories["Mining"] = "Mining"
+							Update_categories["Herbalism"] = "Herb"
+							Update_categories["Fishing"] = "Fishing"
+							Update_categories["Treasures"] = "Treasure"
+							Update_categories["Archaeology"] = "Archaeology"
+							Update_categories["Extract Gas"] = "Extract"
+							Update_categories["Logging"] = "Logging"
+							return Update_categories
+						end,
+						get = function()
+							if Update_category then return Update_category end
+							-- Use currently viewed map on first view.
+							Update_category = nil
+							return Update_category
+						end,
+						set = function(info, key) Update_category = key end,
 					},
 				},
 			},
@@ -2467,7 +2510,9 @@ do
 				end
 				local new_route = { route = {71117111, 12357823, 11171123}, selection = {}, db_type = {} }
 
-				new_route.db_type[create_category] = true
+				if create_category then
+					new_route.db_type[create_category] = true
+				end
 
 				-- Perform a deep copy instead so that db defaults apply
 				local mapID = Routes.LZName[create_zone]
@@ -2525,12 +2570,17 @@ do
 			values = function()
 				create_categories["Mining"] = "Mining"
 				create_categories["Herbalism"] = "Herb"
+				create_categories["Fishing"] = "Fishing"
+				create_categories["Treasures"] = "Treasure"
+				create_categories["Archaeology"] = "Archaeology"
+				create_categories["Extract Gas"] = "Extract"
+				create_categories["Logging"] = "Logging"
 				return create_categories
 			end,
 			get = function()
 				if create_category then return create_category end
 				-- Use currently viewed map on first view.
-				create_category = "Herbalism"
+				create_category = nil
 				return create_category
 			end,
 			set = function(info, key) create_category = key end,
